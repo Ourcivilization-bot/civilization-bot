@@ -55,7 +55,7 @@ EMPIRES = {
         "specialization": "Harbiy / Harbiy dengiz floti",
         "gold": 100_000_000,
         "capital": "Istanbul",
-        "cities": ["Istanbul", Edirne, "Bursa"] # type: ignore
+        "cities": ["Istanbul", "Edirne", "Bursa"]
     },
     "ayyubiylar": {
         "name": "Ayyubiylar sulolasi",
@@ -192,119 +192,4 @@ EMPIRES = {
     "mongol": {
         "name": "Mo‘g‘ullar imperiyasi",
         "group": "⚔️ Antik va Osiyo",
-        "specialization": "Tezkor yurish / Qo‘shin",
-        "gold": 100_000_000,
-        "capital": "Qoraqurum",
-        "cities": ["Qoraqurum", "Pekin", "Tabriz"]
-    },
-    "xunnu": {
-        "name": "Buyuk Xunnu imperiyasi",
-        "group": "⚔️ Antik va Osiyo",
-        "specialization": "Otliq qo‘shin / Erkinlik",
-        "gold": 100_000_000,
-        "capital": "Utuken",
-        "cities": ["Utuken", "Orxon", "Gobi"]
-    },
-    "qadimgi_xitoy": {
-        "name": "Sin imperiyasi (Xitoy)",
-        "group": "⚔️ Antik va Osiyo",
-        "specialization": "Aholi / Devor qurilishi",
-        "gold": 100_000_000,
-        "capital": "Sian",
-        "cities": ["Sian", "Pekin", "Shanxay"]
-    },
-    "fors_ahamoniylar": {
-        "name": "Ahamoniylar imperiyasi (Fors)",
-        "group": "⚔️ Antik va Osiyo",
-        "specialization": "Logistika / Shoh yo'li",
-        "gold": 100_000_000,
-        "capital": " Persepol",
-        "cities": ["Persepol", "Susa", "Bobil"]
-    },
-    "qadimgi_misr": {
-        "name": "Qadimgi Misr",
-        "group": "⚔️ Antik va Osiyo",
-        "specialization": "Obidalar / Nil daryosi",
-        "gold": 100_000_000,
-        "capital": "Memfis",
-        "cities": ["Memfis", "Tiva", "Aleksandriya"]
-    },
-    "makedoniya": {
-        "name": "Makedoniya imperiyasi",
-        "group": "⚔️ Antik va Osiyo",
-        "specialization": "Aleksandr taktikasi / Tezkor",
-        "gold": 100_000_000,
-        "capital": "Pella",
-        "cities": ["Pella", "Bobil", "Aleksandriya"]
-    },
-    "karfagen": {
-        "name": "Karfagen imperiyasi",
-        "group": "⚔️ Antik va Osiyo",
-        "specialization": "Savdo / Dengiz floti",
-        "gold": 100_000_000,
-        "capital": "Karfagen",
-        "cities": ["Karfagen", "Utika", "Gades"]
-    },
-    "yaponiya": {
-        "name": "Tokugava shogunati (Yaponiya)",
-        "group": "⚔️ Antik va Osiyo",
-        "specialization": "Samuraylar / Intizom",
-        "gold": 100_000_000,
-        "capital": "Edo",
-        "cities": ["Edo", "Kioto", "Osaka"]
-    },
-    "turk_xoqonligi": {
-        "name": "Buyuk Turk xoqonligi",
-        "group": "⚔️ Antik va Osiyo",
-        "specialization": "Chegarasiz dasht / Ittifoq",
-        "gold": 100_000_000,
-        "capital": "Suyob",
-        "cities": ["Suyob", "Otuken", "Beshbaliq"]
-    }
-}
-
-user_empires = {}
-
-@bot.message_handler(commands=['start'])
-def send_welcome(message):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    
-    # Guruhlar bo'yicha tugmalarni tartibli chiqaramiz
-    for key, val in EMPIRES.items():
-        markup.add(types.InlineKeyboardButton(f"👑 {val['name']} ({val['group']})", callback_data=f"select_{key}"))
-    
-    bot.reply_to(message, "Salom! Sivilizatsiya o'yiniga xush kelibsiz.\n29 ta buyuk imperiyadan o'zingizga mosini tanlang:", reply_markup=markup)
-
-@bot.callback_query_handler(func=lambda call: True)
-def callback_query(call):
-    user_id = call.from_user.id
-    
-    if call.data.startswith("select_"):
-        emp_key = call.data.split("_", 1)[1]
-        user_empires[user_id] = emp_key
-        emp = EMPIRES[emp_key]
-        
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        markup.add(
-            types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
-            types.InlineKeyboardButton("🗺 Xarita", callback_data="map")
-        )
-        
-        bot.answer_callback_query(call.id, f"Tabriklayman! Siz {emp['name']}ni tanladingiz.")
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=call.message.message_id,
-            text=f"✅ **Sizning tanlovingiz:** {emp['name']}\n"
-                 f"📂 **Guruh:** {emp['group']}\n\n"
-                 f"🏛 **Poytaxt:** {emp['capital']}\n"
-                 f"⚔️ **Ixtisoslashuv:** {emp['specialization']}\n"
-                 f"💰 **Xazina:** {emp['gold']:,} oltin\n\n"
-                 f"Quyidagi menyudan foydalaning:",
-            reply_markup=markup,
-            parse_mode="Markdown"
-        )
-        
-    elif call.data == "profile":
-        emp_key = user_empires.get(user_id)
-        if not emp_key:
-            bot.answer_callback_query(call.id, "Siz hali imperiya tanlamagansiz! /start
+        "specialization": "Tezkor yurish
