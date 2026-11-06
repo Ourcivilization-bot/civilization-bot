@@ -353,7 +353,8 @@ def callback_query(call):
         markup = types.InlineKeyboardMarkup(row_width=1)
         for p_key, p_val in PROVINCES.items():
             if p_key not in data["conquered"]:
-                markup.add(types.InlineKeyboardButton(f"⚔️ {p_val['name']} (💰 {p_val['cost']:,} | 🛡 {p_val['power_required']} kuch)", callback_data=f"conquer_{p_key}"))
+                btn_text = f"⚔️ {p_val['name']} ({p_val['cost']:,} oltin)"
+                markup.add(types.InlineKeyboardButton(btn_text, callback_data=f"conquer_{p_key}"))
         markup.add(types.InlineKeyboardButton("🔙 Asosiy menyu", callback_data="back_to_menu"))
         bot.answer_callback_query(call.id)
         bot.edit_message_text(
@@ -369,7 +370,8 @@ def callback_query(call):
             return
         markup = types.InlineKeyboardMarkup(row_width=1)
         for t_key, t_val in TROOPS.items():
-            markup.add(types.InlineKeyboardButton(f"➕ Yollash: {t_val['name']} (+{t_val['power']} kuch) - {t_val['cost']:,} oltin", callback_data=f"recruit_{t_key}"))
+            btn_text = f"➕ Yollash: {t_val['name']} ({t_val['cost']:,} oltin)"
+            markup.add(types.InlineKeyboardButton(btn_text, callback_data=f"recruit_{t_key}"))
         markup.add(types.InlineKeyboardButton("🔙 Asosiy menyu", callback_data="back_to_menu"))
         bot.answer_callback_query(call.id)
         bot.edit_message_text(
@@ -395,7 +397,8 @@ def callback_query(call):
             return
         markup = types.InlineKeyboardMarkup(row_width=1)
         for tk, tv in TROOPS.items():
-            markup.add(types.InlineKeyboardButton(f"➕ Yollash: {tv['name']} (+{tv['power']} kuch) - {tv['cost']:,} oltin", callback_data=f"recruit_{tk}"))
+            btn_text = f"➕ Yollash: {tv['name']} ({tv['cost']:,} oltin)"
+            markup.add(types.InlineKeyboardButton(btn_text, callback_data=f"recruit_{tk}"))
         markup.add(types.InlineKeyboardButton("🔙 Asosiy menyu", callback_data="back_to_menu"))
         bot.edit_message_text(
             chat_id=call.message.chat.id, message_id=call.message.message_id,
@@ -422,4 +425,38 @@ def callback_query(call):
         markup = types.InlineKeyboardMarkup(row_width=1)
         for pk, pv in PROVINCES.items():
             if pk not in data["conquered"]:
-                markup.add(types.InlineKeyboardButton(f"⚔️ {pv['name']} (💰 {pv['cost']:,} | 🛡 {pv['power_required']} kuch
+                btn_text = f"⚔️ {pv['name']} ({pv['cost']:,} oltin)"
+                markup.add(types.InlineKeyboardButton(btn_text, callback_data=f"conquer_{pk}"))
+        markup.add(types.InlineKeyboardButton("🔙 Asosiy menyu", callback_data="back_to_menu"))
+        bot.edit_message_text(
+            chat_id=call.message.chat.id, message_id=call.message.message_id,
+            text=f"🗺 **Global Xarita va Jang maydoni:**\n\n🎉 **Oxirgi g'alaba:** {province['name']} zabt etildi!\n💰 Qolgan xazina: **{data['gold']:,} oltin**\n🛡 Armiya kuchi: **{data['total_power']} kuch**\n\nBoshqa hududlarni ham tanlashingiz mumkin:",
+            reply_markup=markup, parse_mode="Markdown"
+        )
+        
+    elif call.data == "back_to_menu":
+        data = user_game_data.get(user_id)
+        if not data:
+            return
+        emp = EMPIRES[data["empire"]]
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
+            types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
+            types.InlineKeyboardButton("⚔️ Harbiy Qorgon", callback_data="army_menu")
+        )
+        bot.edit_message_text(
+            chat_id=call.message.chat.id, message_id=call.message.message_id,
+            text=f"✅ **Sizning imperiyangiz:** {emp['name']}\n🏛 **Poytaxt:** {emp['capital']}\n💰 **Xazina:** {data['gold']:,} oltin\n🛡 **Armiya kuchi:** {data['total_power']} kuch\n\nQuyidagi menyudan foydalaning:",
+            reply_markup=markup, parse_mode="Markdown"
+        )
+
+if __name__ == '__main__':
+    print("Bot ishga tushdi...")
+    while True:
+        try:
+            bot.remove_webhook()
+            bot.infinity_polling(skip_pending=True, timeout=60, long_polling_timeout=60)
+        except Exception as e:
+            print(f"Xatolik yuz berdi: {e}")
+            time.sleep(5)
