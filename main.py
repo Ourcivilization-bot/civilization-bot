@@ -22,9 +22,8 @@ threading.Thread(target=run_server, daemon=True).start()
 TOKEN = "9163206553:AAEjs1mCITIow9KnvmTjGzr6f0wNdHmlRvQ"
 bot = telebot.TeleBot(TOKEN)
 
-# --- 29 TA IMPERIYA KATEGORIYALAR BILAN ---
+# --- 29 TA IMPERIYA ---
 EMPIRES = {
-    # --- 1. SHARQ VA ISLOM OLAMI ---
     "temuriylar": {
         "name": "Temuriylar imperiyasi",
         "group": "Sharq va Islom olami",
@@ -105,8 +104,6 @@ EMPIRES = {
         "capital": "Saroy-Bot",
         "cities": ["Saroy-Bot", "Qozon", "Astraxan"]
     },
-
-    # --- 2. YEVROPA VA JAHON ---
     "britaniya": {
         "name": "Britaniya imperiyasi",
         "group": "Yevropa va Jahon",
@@ -187,8 +184,6 @@ EMPIRES = {
         "capital": "Aaxen",
         "cities": ["Aaxen", "Frankfurt", "Vyana"]
     },
-
-    # --- 3. ANTIK VA OSIYO ---
     "mongol": {
         "name": "Mogullar imperiyasi",
         "group": "Antik va Osiyo",
@@ -263,7 +258,17 @@ EMPIRES = {
     }
 }
 
-user_empires = {}
+# Zabt etish mumkin bo'lgan hududlar (Xarita uchun)
+PROVINCES = {
+    "anadolu": {"name": "Anadolu yarimoroli", "cost": 15_000_000},
+    "xuroson": {"name": "Xuroson hududi", "cost": 20_000_000},
+    "mesopotamiya": {"name": "Mesopotamiya", "cost": 25_000_000},
+    "sharqiy_yevropa": {"name": "Sharqiy Yevropa", "cost": 30_000_000},
+    "hindiston": {"name": "Hindiston vodiysi", "cost": 35_000_000}
+}
+
+# O'yinchilarning ma'lumotlarini saqlash (user_id: {"empire": key, "gold": ..., "conquered": [...]})
+user_game_data = {}
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
@@ -314,8 +319,14 @@ def callback_query(call):
         
     elif call.data.startswith("select_"):
         emp_key = call.data.split("_", 1)[1]
-        user_empires[user_id] = emp_key
         emp = EMPIRES[emp_key]
+        
+        # Har bir o'yinchi uchun shaxsiy sessiya ochamiz
+        user_game_data[user_id] = {
+            "empire": emp_key,
+            "gold": emp["gold"],
+            "conquered": []
+        }
         
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
@@ -338,12 +349,14 @@ def callback_query(call):
         )
         
     elif call.data == "profile":
-        emp_key = user_empires.get(user_id)
-        if not emp_key:
+        data = user_game_data.get(user_id)
+        if not data:
             bot.answer_callback_query(call.id, "Siz hali imperiya tanlamagansiz! /start ni bosing.", show_alert=True)
             return
         
-        emp = EMPIRES[emp_key]
+        emp = EMPIRES[data["empire"]]
+        conquered_str = ", ".join([PROVINCES[p]["name"] for p in data["conquered"]]) if data["conquered"] else "Hozircha yo'q"
+        
         bot.answer_callback_query(call.id)
         bot.send_message(
             call.message.chat.id,
@@ -352,13 +365,92 @@ def callback_query(call):
             f"📂 Guruh: {emp['group']}\n"
             f"🏛 Poytaxt: {emp['capital']}\n"
             f"🏙 Shaharlar: {', '.join(emp['cities'])}\n"
-            f"💰 Xazina: {emp['gold']:,} oltin",
+            f"⚔️ Zabt etilgan hududlar: {conquered_str}\n"
+            f"💰 Xazina: {data['gold']:,} oltin",
             parse_mode="Markdown"
         )
         
     elif call.data == "map":
+        data = user_game_data.get(user_id)
+        if not data:
+            bot.answer_callback_query(call.id, "Siz hali imperiya tanlamagansiz! /start ni bosing.", show_alert=True)
+            return
+        
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        for p_key, p_val in PROVINCES.items():
+            if p_key not in data["conquered"]:
+                markup.add(types.InlineKeyboardButton(f"⚔️ Zabt etish: {p_val['name']} ({p_val['cost']:,} oltin)", callback_data=f"conquer_{p_key}"))
+        
+        markup.add(types.InlineKeyboardButton("🔙 Asosiy menyu", callback_data="back_to_menu"))
+        
         bot.answer_callback_query(call.id)
-        bot.send_message(call.message.chat.id, "🗺 **Global Xarita:**\n\nHozircha xarita bo'sh, tez orada bu yerda hududlarni zabt etish qo'shiladi!", parse_mode="Markdown")
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=f"🗺 **Global Xarita va Hududlar:**\n\n"
+                 f"Sizning xazinangiz: **{data['gold']:,} oltin**\n"
+                 f"Quyidagi hududlarni bosib olib, imperiyangizni kengaytirishingiz mumkin:",
+            reply_markup=markup,
+            parse_mode="Markdown"
+        )
+        
+    elif call.data.startswith("conquer_"):
+        p_key = call.data.split("_", 1)[1]
+        data = user_game_data.get(user_id)
+        if not data:
+            bot.answer_callback_query(call.id, "Siz hali imperiya tanlamagansiz!", show_alert=True)
+            return
+        
+        province = PROVINCES[p_key]
+        if data["gold"] >= province["cost"]:
+            data["gold"] -= province["cost"]
+            data["conquered"].append(p_key)
+            bot.answer_callback_query(call.id, f"Tabriklayman! {province["name"]} muvaffaqiyatli zabt etildi!")
+        else:
+            bot.answer_callback_query(call.id, "Xazinangizda yetarli oltin yo'q!", show_alert=True)
+            return
+        
+        # Xarita menyusini yangilash
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        for pk, pv in PROVINCES.items():
+            if pk not in data["conquered"]:
+                markup.add(types.InlineKeyboardButton(f"⚔️ Zabt etish: {pv['name']} ({pv['cost']:,} oltin)", callback_data=f"conquer_{pk}"))
+        
+        markup.add(types.InlineKeyboardButton("🔙 Asosiy menyu", callback_data="back_to_menu"))
+        
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=f"🗺 **Global Xarita va Hududlar:**\n\n"
+                 f"✅ Oxirgi zabt etilgan hudud: **{province['name']}**\n"
+                 f"Sizning xazinangiz: **{data['gold']:,} oltin**\n\n"
+                 f"Boshqa hududlarni ham tanlashingiz mumkin:",
+            reply_markup=markup,
+            parse_mode="Markdown"
+        )
+        
+    elif call.data == "back_to_menu":
+        data = user_game_data.get(user_id)
+        if not data:
+            return
+        emp = EMPIRES[data["empire"]]
+        
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
+            types.InlineKeyboardButton("🗺 Xarita", callback_data="map")
+        )
+        
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=f"✅ **Sizning imperiyangiz:** {emp['name']}\n"
+                 f"🏛 **Poytaxt:** {emp['capital']}\n"
+                 f"💰 **Xazina:** {data['gold']:,} oltin\n\n"
+                 f"Quyidagi menyudan foydalaning:",
+            reply_markup=markup,
+            parse_mode="Markdown"
+        )
 
 if __name__ == '__main__':
     print("Bot ishga tushdi...")
