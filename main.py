@@ -411,4 +411,15 @@ def callback_query(call):
             return
         province = PROVINCES[p_key]
         if data["gold"] < province["cost"]:
-            bot.answer_callback_query(call.id, "Xazinangizda yetarli oltin yo'q!", show_
+            bot.answer_callback_query(call.id, "Xazinangizda yetarli oltin yo'q!", show_alert=True)
+            return
+        if data["total_power"] < province["power_required"]:
+            bot.answer_callback_query(call.id, f"Armiyangiz kuchi yetmadi! Kerakli kuch: {province['power_required']}", show_alert=True)
+            return
+        data["gold"] -= province["cost"]
+        data["conquered"].append(p_key)
+        bot.answer_callback_query(call.id, f"G'alaba! {province['name']} muvaffaqiyatli zabt etildi!")
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        for pk, pv in PROVINCES.items():
+            if pk not in data["conquered"]:
+                markup.add(types.InlineKeyboardButton(f"⚔️ {pv['name']} (💰 {pv['cost']:,} | 🛡 {pv['power_required']} kuch
