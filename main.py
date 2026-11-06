@@ -5,7 +5,6 @@ TOKEN = "import telebot
 from telebot import types
 
 TOKEN = "9163206553:AAEjs1mCITIow9KnvmTjGzr6f0wNdHmlRvQ"
-
 bot = telebot.TeleBot(TOKEN)
 
 EMPIRES = {
