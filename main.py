@@ -22,9 +22,9 @@ threading.Thread(target=run_server, daemon=True).start()
 TOKEN = "9163206553:AAEjs1mCITIow9KnvmTjGzr6f0wNdHmlRvQ"
 bot = telebot.TeleBot(TOKEN)
 
-# --- 29 TA IMPERIYA (Xatosiz toza lug'at) ---
+# --- 29 TA IMPERIYA KATEGORIYALAR BILAN ---
 EMPIRES = {
-    # --- 1. SHARQ VA ISLOM OLAMI IMPERIYALARI ---
+    # --- 1. SHARQ VA ISLOM OLAMI ---
     "temuriylar": {
         "name": "Temuriylar imperiyasi",
         "group": "Sharq va Islom olami",
@@ -106,7 +106,7 @@ EMPIRES = {
         "cities": ["Saroy-Bot", "Qozon", "Astraxan"]
     },
 
-    # --- 2. YEVROPA VA JAHON IMPERIYALARI ---
+    # --- 2. YEVROPA VA JAHON ---
     "britaniya": {
         "name": "Britaniya imperiyasi",
         "group": "Yevropa va Jahon",
@@ -188,7 +188,7 @@ EMPIRES = {
         "cities": ["Aaxen", "Frankfurt", "Vyana"]
     },
 
-    # --- 3. ANTIK VA OSIYO SIVILIZATSIYALARI ---
+    # --- 3. ANTIK VA OSIYO ---
     "mongol": {
         "name": "Mogullar imperiyasi",
         "group": "Antik va Osiyo",
@@ -268,17 +268,51 @@ user_empires = {}
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
     markup = types.InlineKeyboardMarkup(row_width=1)
-    
-    for key, val in EMPIRES.items():
-        markup.add(types.InlineKeyboardButton(f"👑 {val['name']} ({val['group']})", callback_data=f"select_{key}"))
-    
-    bot.reply_to(message, "Salom! Sivilizatsiya o'yiniga xush kelibsiz.\n29 ta buyuk imperiyadan o'zingizga mosini tanlang:", reply_markup=markup)
+    markup.add(
+        types.InlineKeyboardButton("🕌 Sharq va Islom olami", callback_data="cat_Sharq va Islom olami"),
+        types.InlineKeyboardButton("🌍 Yevropa va Jahon", callback_data="cat_Yevropa va Jahon"),
+        types.InlineKeyboardButton("⚔️ Antik va Osiyo", callback_data="cat_Antik va Osiyo")
+    )
+    bot.reply_to(message, "Salom! Sivilizatsiya o'yiniga xush kelibsiz.\nQuyidagi kategoriyalardan birini tanlang:", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
     user_id = call.from_user.id
     
-    if call.data.startswith("select_"):
+    if call.data.startswith("cat_"):
+        cat_name = call.data.split("_", 1)[1]
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        
+        for key, val in EMPIRES.items():
+            if val["group"] == cat_name:
+                markup.add(types.InlineKeyboardButton(f"👑 {val['name']}", callback_data=f"select_{key}"))
+        
+        markup.add(types.InlineKeyboardButton("🔙 Kategoriyalarga qaytish", callback_data="back_to_cats"))
+        
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=f"📂 **{cat_name}** kategoriyasidagi imperiyalar:",
+            reply_markup=markup,
+            parse_mode="Markdown"
+        )
+        
+    elif call.data == "back_to_cats":
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("🕌 Sharq va Islom olami", callback_data="cat_Sharq va Islom olami"),
+            types.InlineKeyboardButton("🌍 Yevropa va Jahon", callback_data="cat_Yevropa va Jahon"),
+            types.InlineKeyboardButton("⚔️ Antik va Osiyo", callback_data="cat_Antik va Osiyo")
+        )
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text="Salom! Sivilizatsiya o'yiniga xush kelibsiz.\nQuyidagi kategoriyalardan birini tanlang:",
+            reply_markup=markup,
+            parse_mode="Markdown"
+        )
+        
+    elif call.data.startswith("select_"):
         emp_key = call.data.split("_", 1)[1]
         user_empires[user_id] = emp_key
         emp = EMPIRES[emp_key]
