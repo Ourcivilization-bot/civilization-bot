@@ -1,4 +1,5 @@
 import os
+import time
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
 import telebot
@@ -115,4 +116,10 @@ def callback_query(call):
 
 if __name__ == '__main__':
     print("Bot ishga tushdi...")
-    bot.infinity_polling(skip_pending=True)
+    while True:
+        try:
+            bot.remove_webhook()
+            bot.infinity_polling(skip_pending=True)
+        except Exception as e:
+            print(f"Xatolik yuz berdi: {e}")
+            time.sleep(5)
