@@ -17,6 +17,7 @@ def run_server():
     server = HTTPServer(('0.0.0.0', port), SimpleHandler)
     server.serve_forever()
 
+# Serverni alohida oqimda (thread) ishga tushiramiz
 threading.Thread(target=run_server, daemon=True).start()
 
 TOKEN = "9163206553:AAEjs1mCITIow9KnvmTjGzr6f0wNdHmlRvQ"
@@ -480,3 +481,55 @@ def callback_query(call):
         else:
             bot.answer_callback_query(call.id, "Xazinangizda yetarli oltin yo'q!", show_alert=True)
             return
+        
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        for pk, pv in PROVINCES.items():
+            if pk not in data["conquered"]:
+                markup.add(types.InlineKeyboardButton(f"⚔️ Zabt etish: {pv['name']} ({pv['cost']:,} oltin)", callback_data=f"conquer_{pk}"))
+        
+        markup.add(types.InlineKeyboardButton("🔙 Asosiy menyu", callback_data="back_to_menu"))
+        
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=f"🗺 **Global Xarita va Hududlar:**\n\n"
+                 f"✅ Oxirgi zabt etilgan hudud: **{province['name']}**\n"
+                 f"Sizning xazinangiz: **{data['gold']:,} oltin**\n\n"
+                 f"Boshqa hududlarni ham tanlashingiz mumkin:",
+            reply_markup=markup,
+            parse_mode="Markdown"
+        )
+        
+    elif call.data == "back_to_menu":
+        data = user_game_data.get(user_id)
+        if not data:
+            return
+        emp = EMPIRES[data["empire"]]
+        
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
+            types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
+            types.InlineKeyboardButton("⚔️ Harbiy Qorgon", callback_data="army_menu")
+        )
+        
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.message_id,
+            text=f"✅ **Sizning imperiyangiz:** {emp['name']}\n"
+                 f"🏛 **Poytaxt:** {emp['capital']}\n"
+                 f"💰 **Xazina:** {data['gold']:,} oltin\n\n"
+                 f"Quyidagi menyudan foydalaning:",
+            reply_markup=markup,
+            parse_mode="Markdown"
+        )
+
+if __name__ == '__main__':
+    print("Bot ishga tushdi...")
+    while True:
+        try:
+            bot.remove_webhook()
+            bot.infinity_polling(skip_pending=True, timeout=60, long_polling_timeout=60)
+        except Exception as e:
+            print(f"Xatolik yuz berdi: {e}")
+            time.sleep(5)
