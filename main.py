@@ -50,7 +50,11 @@ def get_db():
 def get_user_data(user_id):
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT player_name, empire, monarch, gold, conquered, army_piyoda, army_otliq, army_qamal, total_power, last_tax_time FROM players WHERE user_id = ?", (user_id,))
+    cursor.execute(
+        "SELECT player_name, empire, monarch, gold, conquered, "
+        "army_piyoda, army_otliq, army_qamal, total_power, last_tax_time "
+        "FROM players WHERE user_id = ?", (user_id,)
+    )
     row = cursor.fetchone()
     conn.close()
     if row:
@@ -60,7 +64,11 @@ def get_user_data(user_id):
             "monarch": row[2],
             "gold": row[3],
             "conquered": row[4].split(",") if row[4] else [],
-            "army": {"piyoda": row[5], "otliq": row[6], "qamal": row[7]},
+            "army": {
+                "piyoda": row[5],
+                "otliq": row[6],
+                "qamal": row[7]
+            },
             "total_power": row[8],
             "last_tax_time": row[9]
         }
@@ -71,7 +79,9 @@ def save_user_data(user_id, data):
     cursor = conn.cursor()
     conquered_str = ",".join(data["conquered"])
     cursor.execute('''
-        INSERT OR REPLACE INTO players (user_id, player_name, empire, monarch, gold, conquered, army_piyoda, army_otliq, army_qamal, total_power, last_tax_time)
+        INSERT OR REPLACE INTO players 
+        (user_id, player_name, empire, monarch, gold, conquered, 
+         army_piyoda, army_otliq, army_qamal, total_power, last_tax_time)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ''', (
         user_id,
@@ -92,7 +102,11 @@ def save_user_data(user_id, data):
 def get_all_users():
     conn = get_db()
     cursor = conn.cursor()
-    cursor.execute("SELECT user_id, player_name, empire, monarch, gold, conquered, army_piyoda, army_otliq, army_qamal, total_power, last_tax_time FROM players")
+    cursor.execute(
+        "SELECT user_id, player_name, empire, monarch, gold, conquered, "
+        "army_piyoda, army_otliq, army_qamal, total_power, last_tax_time "
+        "FROM players"
+    )
     rows = cursor.fetchall()
     conn.close()
     users = {}
@@ -103,7 +117,11 @@ def get_all_users():
             "monarch": row[3],
             "gold": row[4],
             "conquered": row[5].split(",") if row[5] else [],
-            "army": {"piyoda": row[6], "otliq": row[7], "qamal": row[8]},
+            "army": {
+                "piyoda": row[6],
+                "otliq": row[7],
+                "qamal": row[8]
+            },
             "total_power": row[9],
             "last_tax_time": row[10]
         }
@@ -298,38 +316,4 @@ EMPIRES = {
         "artakserks": m("Artakserks I", "Barqarorlik", "gold", 1.20)
     }),
     "qadimgi_misr": e("Qadimgi Misr", ANTIK, "Memfis", {
-        "ramses": m("Ramses II", "Obidalar", "power", 1.30),
-        "tutmos": m("Tutmos III", "Kengayish", "cost", 0.75),
-        "kleopatra": m("Kleopatra", "Xazina", "gold", 1.30),
-        "exnaton": m("Exnaton", "Madaniyat", "tax", 1.20)
-    }),
-    "makedoniya": e("Makedoniya imperiyasi", ANTIK, "Pella", {
-        "filipp2_m": m("Filipp II", "Falanga", "power", 1.25),
-        "aleksandr": m("Aleksandr", "Saltanat +50%", "power", 1.50),
-        "antigon": m("Antigon I", "Nazorat", "cost", 0.85),
-        "polemey": m("Polemey I", "Ilm va xazina", "gold", 1.30)
-    }),
-    "yaponiya": e("Tokugava shogunati", ANTIK, "Edo", {
-        "tokugava": m("Tokugava", "Intizom", "tax", 1.30),
-        "nobunaga": m("Oda Nobunaga", "Islohotlar", "power", 1.35),
-        "toyotomi": m("Toyotomi", "Birlik", "cost", 0.85),
-        "miyamoto": m("Miyamoto", "Mahorat", "power", 1.20)
-    }),
-    "turk_xoqonligi": e("Buyuk Turk xoqonligi", ANTIK, "Suyob", {
-        "bumin": m("Bumin Xoqon", "Qudrat", "power", 1.35),
-        "istami": m("Istami Yabg'u", "Ipak yo'li", "gold", 1.30),
-        "tardu": m("Tardu", "Kengayish", "cost", 0.80),
-        "bilga": m("Bilga Xoqon", "Soliq", "tax", 1.30)
-    })
-}
-
-PROVINCES = {
-    "anadolu": {"name": "Anadolu", "cost": 10_000_000, "power_required": 30},
-    "xuroson": {"name": "Xuroson", "cost": 15_000_000, "power_required": 70},
-    "mesopotamiya": {"name": "Mesopotamiya", "cost": 20_000_000, "power_required": 120},
-    "sharqiy_yevropa": {"name": "Sharqiy Yevropa", "cost": 25_000_000, "power_required": 200},
-    "hindiston": {"name": "Hindiston", "cost": 30_000_000, "power_required": 300}
-}
-
-TROOPS = {
-    "piyoda
+        "ramses": m("Ramses II", "Ob
