@@ -158,14 +158,15 @@ def api_get_user(user_id):
 # --- TELEGRAM BOT QISMI ---
 def get_main_menu_markup():
     markup = types.InlineKeyboardMarkup(row_width=2)
+    web_app = types.WebAppInfo(url="https://playful-mochi-b8622a.netlify.app")
     markup.add(
+        types.InlineKeyboardButton("🚀 O'yinni ochish (Mini App)", web_app=web_app),
         types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
         types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
         types.InlineKeyboardButton("⚔️ Qorgon", callback_data="army_menu"),
         types.InlineKeyboardButton("💰 Soliq", callback_data="collect_tax"),
         types.InlineKeyboardButton("🤝 Diplomatiya", callback_data="diplomacy_menu"),
         types.InlineKeyboardButton("🏆 Reyting", callback_data="leaderboard")
-        # Kelajakda shu yerga Web App (Mini App) tugmasini qo'shamiz
     )
     return markup
 
@@ -476,7 +477,6 @@ def callback_query(call):
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"✅ **{emp['name']}**\n💰 Xazina: {data['gold']:,} oltin\n🛡 Kuch: {data['total_power']}", reply_markup=get_main_menu_markup(), parse_mode="Markdown")
 
 if __name__ == "__main__":
-    # Botni alohida oqimda (thread) ishga tushiramiz
     def run_bot():
         bot.remove_webhook()
         while True:
@@ -488,6 +488,5 @@ if __name__ == "__main__":
 
     threading.Thread(target=run_bot, daemon=True).start()
     
-    # Flask serverini asosiy oqimda ishga tushiramiz (Render uchun)
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
