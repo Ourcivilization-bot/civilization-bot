@@ -155,13 +155,27 @@ def get_main_menu_markup():
 
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
-    markup = types.InlineKeyboardMarkup(row_width=1)
-    markup.add(
-        types.InlineKeyboardButton("🕌 Sharq", callback_data="cat_Sharq"),
-        types.InlineKeyboardButton("🌍 Yevropa", callback_data="cat_Yevropa"),
-        types.InlineKeyboardButton("⚔️ Antik", callback_data="cat_Antik")
-    )
-    bot.reply_to(message, "Sivilizatsiya o'yiniga xush kelibsiz! Kategoriyani tanlang:", reply_markup=markup)
+    user_id = message.from_user.id
+    user_data = get_user_data(user_id)
+    
+    # Agar o'yinchi allaqachon mavjud bo'lsa, uni boshidan boshlatmay, menyuni chiqaramiz
+    if user_data:
+        emp = EMPIRES[user_data["empire"]]
+        bot.reply_to(
+            message, 
+            f"Siz allaqachon o'yindasiz! ✅ **{emp['name']}**\n💰 Xazina: {user_data['gold']:,} oltin\n🛡 Kuch: {user_data['total_power']}", 
+            reply_markup=get_main_menu_markup(), 
+            parse_mode="Markdown"
+        )
+    else:
+        # Yangi o'yinchi bo'lsa, imperiya tanlash chiqadi
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("🕌 Sharq", callback_data="cat_Sharq"),
+            types.InlineKeyboardButton("🌍 Yevropa", callback_data="cat_Yevropa"),
+            types.InlineKeyboardButton("⚔️ Antik", callback_data="cat_Antik")
+        )
+        bot.reply_to(message, "Sivilizatsiya o'yiniga xush kelibsiz! Kategoriyani tanlang:", reply_markup=markup)
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_query(call):
