@@ -2,7 +2,7 @@ import os
 import time
 import threading
 import sqlite3
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+from flask import Flask, jsonify, request
 import telebot
 from telebot import types
 
@@ -11,6 +11,9 @@ bot = telebot.TeleBot(TOKEN)
 
 START_GOLD = 100_000_000
 EAST, EUROPE, ANTIK = "Sharq", "Yevropa", "Antik"
+
+# Flask serverini ishga tushiramiz
+app = Flask(__name__)
 
 def init_db():
     conn = sqlite3.connect('game.db', check_same_thread=False)
@@ -130,17 +133,29 @@ TROOPS = {
     "qamal": {"name": "Qamal qurollari", "cost": 7_000_000, "power": 90}
 }
 
-class HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self):
-        self.send_response(200)
-        self.end_headers()
-        self.wfile.write(b"Bot ishlamoqda!")
+# --- FLASK API ENDPOINTS (Mini App uchun) ---
+@app.route("/")
+def home():
+    return "Sivilizatsiya API ishlamoqda!"
 
-def run_server():
-    port = int(os.environ.get("PORT", 10000))
-    server = ThreadingHTTPServer(("0.0.0.0", port), HealthHandler)
-    server.serve_forever()
+@app.route("/api/user/<int:user_id>", methods=["GET"])
+def api_get_user(user_id):
+    data = get_user_data(user_id)
+    if not data:
+        return jsonify({"error": "O'yinchi topilmadi"}), 404
+    emp = EMPIRES[data["empire"]]
+    monarch = emp["monarchs"][data["monarch"]]
+    return jsonify({
+        "player_name": data["player_name"],
+        "empire_name": emp["name"],
+        "monarch_name": monarch["name"],
+        "gold": data["gold"],
+        "total_power": data["total_power"],
+        "conquered": data["conquered"],
+        "army": data["army"]
+    })
 
+# --- TELEGRAM BOT QISMI ---
 def get_main_menu_markup():
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
@@ -150,6 +165,7 @@ def get_main_menu_markup():
         types.InlineKeyboardButton("💰 Soliq", callback_data="collect_tax"),
         types.InlineKeyboardButton("🤝 Diplomatiya", callback_data="diplomacy_menu"),
         types.InlineKeyboardButton("🏆 Reyting", callback_data="leaderboard")
+        # Kelajakda shu yerga Web App (Mini App) tugmasini qo'shamiz
     )
     return markup
 
@@ -158,7 +174,6 @@ def send_welcome(message):
     user_id = message.from_user.id
     user_data = get_user_data(user_id)
     
-    # Agar o'yinchi allaqachon mavjud bo'lsa, uni boshidan boshlatmay, menyuni chiqaramiz
     if user_data:
         emp = EMPIRES[user_data["empire"]]
         bot.reply_to(
@@ -168,7 +183,6 @@ def send_welcome(message):
             parse_mode="Markdown"
         )
     else:
-        # Yangi o'yinchi bo'lsa, imperiya tanlash chiqadi
         markup = types.InlineKeyboardMarkup(row_width=1)
         markup.add(
             types.InlineKeyboardButton("🕌 Sharq", callback_data="cat_Sharq"),
@@ -462,12 +476,18 @@ def callback_query(call):
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"✅ **{emp['name']}**\n💰 Xazina: {data['gold']:,} oltin\n🛡 Kuch: {data['total_power']}", reply_markup=get_main_menu_markup(), parse_mode="Markdown")
 
 if __name__ == "__main__":
-    threading.Thread(target=run_server, daemon=True).start()
-    bot.remove_webhook()
-    print("Bot ishga tushdi va bazaga ulandi...")
-    while True:
-        try:
-            bot.infinity_polling(skip_pending=True, timeout=60, long_polling_timeout=60)
-        except Exception as e:
-            print(f"Xatolik: {e}")
-            time.sleep(5)
+    # Botni alohida oqimda (thread) ishga tushiramiz
+    def run_bot():
+        bot.remove_webhook()
+        while True:
+            try:
+                bot.infinity_polling(skip_pending=True, timeout=60, long_polling_timeout=60)
+            except Exception as e:
+                print(f"Bot xatoligi: {e}")
+                time.sleep(5)
+
+    threading.Thread(target=run_bot, daemon=True).start()
+    
+    # Flask serverini asosiy oqimda ishga tushiramiz (Render uchun)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
