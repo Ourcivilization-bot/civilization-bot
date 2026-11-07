@@ -3,7 +3,7 @@ import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import ApplicationBuilder, CommandHandler, ContextTypes
+from telegram.ext import Application, CommandHandler
 
 # Loggingni sozlash
 logging.basicConfig(
@@ -12,51 +12,22 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Flask ilovasini yaratish (Telegram Mini App bilan muloqot uchun)
+# Flask ilovasini yaratish
 app = Flask(__name__)
-CORS(app)  # CORS xatolarining oldini olish uchun
+CORS(app)
 
-# Bot tokeningizni shu yerga yozasiz (yoki Render Environment Variables'dan o'qiydi)
 TOKEN = os.getenv("BOT_TOKEN", "SIZNING_BOT_TOKENINGIZ")
 WEB_APP_URL = "https://helpful-marshmallow-91609c.netlify.app"
+RENDER_URL = "https://civilization-bot-4.onrender.com"  # Render'dagi web xizmat havolangiz (oxirida / bo'lmasin)
 
-# Vaqtinchalik o'yinchi bazasi (sinov uchun)
-PLAYERS_DB = {
-    123456789: {
-        "player_name": "Amir Temur",
-        "monarch_name": "Sohibqiron",
-        "empire_name": "Turon Sivilizatsiyasi",
-        "gold": 50000,
-        "total_power": 12500,
-        "conquered": ["Samarqand", "Buxoro", "Xorazm"]
-    }
-}
+# Vaqtinchalik o'yinchi bazasi
+PLAYERS_DB = {}
 
-@app.route(f'/api/user/<int:user_id>', methods=['GET'])
-def get_user_data(user_id):
-    """Mini App uchun foydalanuvchi ma'lumotlarini qaytaruvchi API"""
-    user_data = PLAYERS_DB.get(user_id)
-    if not user_data:
-        # Agar foydalanuvchi bazada bo'lmasa, standart qiymat qaytaramiz
-        return jsonify({
-            "player_name": "Hokim",
-            "monarch_name": "Imperator",
-            "empire_name": "Yangi Sivilizatsiya",
-            "gold": 1000,
-            "total_power": 500,
-            "conquered": []
-        })
-    return jsonify(user_data)
+# Telegram bot obyektini va application'ni sozlaymiz
+telegram_app = Application.builder().token(TOKEN).build()
 
-@app.route('/')
-def home():
-    return "Sivilizatsiya Bot Backend ishlayapti!"
-
-# Telegram Bot /start buyrug'i
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def start(update: Update, context):
     user = update.effective_user
-    
-    # Agar foydalanuvchi bazada bo'lmasa, uni qo'shamiz
     if user.id not in PLAYERS_DB:
         PLAYERS_DB[user.id] = {
             "player_name": user.first_name or "Hokim",
@@ -67,7 +38,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "conquered": ["Poytaxt"]
         }
 
-    # Mini App ochish uchun tugma
     keyboard = [[
         InlineKeyboardButton(
             "🚀 Sivilizatsiyani Boshqarish", 
@@ -83,18 +53,41 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         parse_mode="HTML"
     )
 
-def main():
-    # Telegram botni sozlash
-    application = ApplicationBuilder().token(TOKEN).build()
-    application.add_handler(CommandHandler("start", start))
-    
-    # Pollingni ishga tushirish
-    print("Bot ishga tushdi...")
-    application.run_polling()
+telegram_app.add_handler(CommandHandler("start", start))
+
+@app.route(f'/api/user/<int:user_id>', methods=['GET'])
+def get_user_data(user_id):
+    user_data = PLAYERS_DB.get(user_id)
+    if not user_data:
+        return jsonify({
+            "player_name": "Hokim",
+            "monarch_name": "Imperator",
+            "empire_name": "Yangi Sivilizatsiya",
+            "gold": 1000,
+            "total_power": 500,
+            "conquered": []
+        })
+    return jsonify(user_data)
+
+@app.route('/')
+def home():
+    return "Sivilizatsiya Bot Backend va Webhook ishlayapti!"
+
+@app.route(f'/{TOKEN}', methods=['POST'])
+def webhook():
+    """Telegramdan keladigan xabarlarni qabul qilib oluvchi webhook endpoint"""
+    update = Update.de_json(request.get_json(force=True), telegram_app.bot)
+    # Telegram xabarini async tarzda navbatga qo'shamiz
+    import asyncio
+    asyncio.run(telegram_app.process_update(update))
+    return "OK", 200
 
 if __name__ == '__main__':
-    # Render muhitida Flask va Botni birga ishlatish uchun portni sozlaymiz
     port = int(os.environ.get('PORT', 5000))
-    # Eslatma: Render orqali botni to'liq ishlatish uchun Webhook yoki threading ishlatish kerak bo'ladi, 
-    # agar oddiy run_polling ishlatayotgan bo'lsangiz Render'da background worker sifatida ochganingiz maqbul.
+    
+    # Render ishga tushganda avtomatik ravishda Telegramga webhook manzilini ulaymiz
+    import requests
+    webhook_url = f"{RENDER_URL}/{TOKEN}"
+    requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}")
+    
     app.run(host='0.0.0.0', port=port)
