@@ -329,9 +329,4 @@ def callback_query(call):
             types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
             types.InlineKeyboardButton("⚔️ Harbiy Qorgon", callback_data="army_menu"),
             types.InlineKeyboardButton("💰 Soliq yig'ish", callback_data="collect_tax"),
-            types.InlineKeyboardButton("🏆 Reyting", callback_data="leaderboard")
-        )
-        bot.answer_callback_query(call.id, f"Tabriklayman! Siz {emp['name']}ni tanladingiz.")
-        bot.edit_message_text(
-            chat_id=call.message.chat.id, message_id=call.message.message_id,
-            text=f"✅ **Sizning tanlovingiz:** {emp['name']}\n📂 **Guruh:** {emp['group']}\n\n🏛 **Poytaxt:** {emp['capital']}\n⚔️ **Ixtisoslashuv:** {emp
+            types.InlineKeyboardButton("🏆 Rey
