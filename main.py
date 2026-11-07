@@ -153,4 +153,57 @@ EMPIRES = {
         ["Buxoro", "Samarqand", "Qarshi"],
         {
             "rahimxon_b": _monarch("Muhammad Rahimxon", "Amirlik asosi +25%", "power", 1.25),
-            "shohmurod": _monarch("Sho
+            "shohmurod": _monarch("Shohmurod", "Adolatli siyosat +30%", "tax", 1.30),
+            "haydar": _monarch("Amir Haydar", "Madaniyat va ilm-fan +20%", "gold", 1.20),
+            "olimxon": _monarch("Said Olimxon", "Qiyin davrdagi mudofaa +25%", "power", 1.25),
+        },
+    ),
+    "xiva_xonligi": _empire(
+        "Xiva xonligi", EAST, "Voha / Qo'shin shijoati", "Xiva",
+        ["Xiva", "Urganch", "Gurlan"],
+        {
+            "olloquli": _monarch("Olloqulixon", "Ichan qal'a obidalari +30%", "gold", 1.30),
+            "rahimxon2": _monarch("Muhammad Rahimxon II", "Ma'rifat va qudrat +35%", "tax", 1.35),
+            "isfandiyor": _monarch("Isfandiyorxon", "Islohotlar va soliqlar +20%", "tax", 1.20),
+            "junaid": _monarch("Junaidxon", "Qat'iy qarshilik va shijoat +30%", "power", 1.30),
+        },
+    ),
+    "qoqon_xonligi": _empire(
+        "Qo'qon xonligi", EAST, "Vodiy savdosi / Markazlashuv", "Qo'qon",
+        ["Qo'qon", "Namangan", "Andijon", "O'sh"],
+        {
+            "norbotabiy": _monarch("Norbo'tabiy", "Dehqonchilik va xazina +25%", "gold", 1.25),
+            "olimxon_q": _monarch("Olimxon", "Markazlashgan armiya +30%", "power", 1.30),
+            "madalixon": _monarch("Madalixon", "Savdo yo'llari yuksalishi +35%", "tax", 1.35),
+            "xudoyorxon": _monarch("Xudoyorxon", "Saroy arxitekturasi +25%", "gold", 1.25),
+        },
+    ),
+    "salibchilar": _empire(
+        "Salibchilar (Quddus qirolligi)", EAST, "Ritsarlar / Himoya", "Quddus",
+        ["Quddus", "Antioxiya", "Akkon"],
+        {
+            "gotfrid": _monarch("Gotfrid Bulonskiy", "Asoschilik kuchi +25%", "power", 1.25),
+            "baldvin4": _monarch("Baldvin IV", "Iroda va mudofaa +30%", "power", 1.30),
+            "richard": _monarch("Richard Sheryurak", "Afsonaviy jangovar quvvat +40%", "power", 1.40),
+            "reno": _monarch("Reno de Shatiyon", "Shijoat va soliq +20%", "tax", 1.20),
+        },
+    ),
+
+    # ------------------------------------------------------------------
+    # YEVROPA VA JAHON
+    # ------------------------------------------------------------------
+    "britaniya": _empire(
+        "Britaniya imperiyasi", EUROPE, "Iqtisodiy / Savdo", "London",
+        ["London", "Liverpul", "Edinburg"],
+        {
+            "elizaveta": _monarch("Qirolicha Yelizaveta I", "Dengiz floti va savdo +30%", "gold", 1.30),
+            "viktoriya": _monarch("Qirolicha Viktoriya", "Global soliq +35%", "tax", 1.35),
+            "cherchill": _monarch("Uinston Cherchill", "Harbiy qat'iyat +25%", "power", 1.25),
+            "genrix8": _monarch("Genrix VIII", "Siyosiy ta'sir", "cost", 0.90),
+        },
+    ),
+    "rim": _empire(
+        "Rim imperiyasi", EUROPE, "Infratuzilma / Legionlar", "Rim",
+        ["Rim", "Milano", "Afina"],
+        {
+            "sezar": _monarch("Yuliy Sezar
