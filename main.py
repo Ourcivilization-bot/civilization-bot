@@ -222,4 +222,116 @@ EMPIRES = {
         "capital": "Memfis",
         "cities": ["Memfis", "Tiva", "Aleksandriya"]
     },
+    "makedoniya": {
+        "name": "Makedoniya imperiyasi",
+        "group": "Antik va Osiyo",
+        "specialization": "Aleksandr taktikasi / Tezkor",
+        "gold": 100_000_000,
+        "capital": "Pella",
+        "cities": ["Pella", "Bobil", "Aleksandriya"]
+    },
+    "karfagen": {
+        "name": "Karfagen imperiyasi",
+        "group": "Antik va Osiyo",
+        "specialization": "Savdo / Dengiz floti",
+        "gold": 100_000_000,
+        "capital": "Karfagen",
+        "cities": ["Karfagen", "Utika", "Gades"]
+    },
+    "yaponiya": {
+        "name": "Tokugava shogunati (Yaponiya)",
+        "group": "Antik va Osiyo",
+        "specialization": "Samuraylar / Intizom",
+        "gold": 100_000_000,
+        "capital": "Edo",
+        "cities": ["Edo", "Kioto", "Osaka"]
+    },
+    "turk_xoqonligi": {
+        "name": "Buyuk Turk xoqonligi",
+        "group": "Antik va Osiyo",
+        "specialization": "Chegarasiz dasht / Ittifoq",
+        "gold": 100_000_000,
+        "capital": "Suyob",
+        "cities": ["Suyob", "Otuken", "Beshbaliq"]
+    }
+}
+
+PROVINCES = {
+    "anadolu": {"name": "Anadolu yarimoroli", "cost": 10_000_000, "power_required": 30},
+    "xuroson": {"name": "Xuroson hududi", "cost": 15_000_000, "power_required": 70},
+    "mesopotamiya": {"name": "Mesopotamiya", "cost": 20_000_000, "power_required": 120},
+    "sharqiy_yevropa": {"name": "Sharqiy Yevropa", "cost": 25_000_000, "power_required": 200},
+    "hindiston": {"name": "Hindiston vodiysi", "cost": 30_000_000, "power_required": 300}
+}
+
+TROOPS = {
+    "piyoda": {"name": "Piyoda askarlar", "cost": 1_000_000, "power": 10},
+    "otliq": {"name": "Saralangan otliqlar", "cost": 3_000_000, "power": 35},
+    "qamal": {"name": "Qamal qurollari", "cost": 7_000_000, "power": 90}
+}
+
+user_game_data = {}
+
+@bot.message_handler(commands=['start'])
+def send_welcome(message):
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    markup.add(
+        types.InlineKeyboardButton("🕌 Sharq va Islom olami", callback_data="cat_Sharq va Islom olami"),
+        types.InlineKeyboardButton("🌍 Yevropa va Jahon", callback_data="cat_Yevropa va Jahon"),
+        types.InlineKeyboardButton("⚔️ Antik va Osiyo", callback_data="cat_Antik va Osiyo")
+    )
+    bot.reply_to(message, "Salom! Sivilizatsiya o'yiniga xush kelibsiz.\nQuyidagi kategoriyalardan birini tanlang:", reply_markup=markup)
+
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call):
+    user_id = call.from_user.id
     
+    if call.data.startswith("cat_"):
+        cat_name = call.data.split("_", 1)[1]
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        for key, val in EMPIRES.items():
+            if val["group"] == cat_name:
+                markup.add(types.InlineKeyboardButton(f"👑 {val['name']}", callback_data=f"select_{key}"))
+        markup.add(types.InlineKeyboardButton("🔙 Kategoriyalarga qaytish", callback_data="back_to_cats"))
+        
+        bot.edit_message_text(
+            chat_id=call.message.chat.id, message_id=call.message.message_id,
+            text=f"📂 **{cat_name}** kategoriyasidagi imperiyalar:", reply_markup=markup, parse_mode="Markdown"
+        )
+        
+    elif call.data == "back_to_cats":
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("🕌 Sharq va Islom olami", callback_data="cat_Sharq va Islom olami"),
+            types.InlineKeyboardButton("🌍 Yevropa va Jahon", callback_data="cat_Yevropa va Jahon"),
+            types.InlineKeyboardButton("⚔️ Antik va Osiyo", callback_data="cat_Antik va Osiyo")
+        )
+        bot.edit_message_text(
+            chat_id=call.message.chat.id, message_id=call.message.message_id,
+            text="Salom! Sivilizatsiya o'yiniga xush kelibsiz.\nQuyidagi kategoriyalardan birini tanlang:", reply_markup=markup, parse_mode="Markdown"
+        )
+        
+    elif call.data.startswith("select_"):
+        emp_key = call.data.split("_", 1)[1]
+        emp = EMPIRES[emp_key]
+        user_game_data[user_id] = {
+            "empire": emp_key,
+            "player_name": call.from_user.first_name,
+            "gold": emp["gold"],
+            "conquered": [],
+            "army": {"piyoda": 0, "otliq": 0, "qamal": 0},
+            "total_power": 0,
+            "last_tax_time": 0
+        }
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
+            types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
+            types.InlineKeyboardButton("⚔️ Harbiy Qorgon", callback_data="army_menu"),
+            types.InlineKeyboardButton("💰 Soliq yig'ish", callback_data="collect_tax"),
+            types.InlineKeyboardButton("🏆 Reyting", callback_data="leaderboard")
+        )
+        bot.answer_callback_query(call.id, f"Tabriklayman! Siz {emp['name']}ni tanladingiz.")
+        bot.edit_message_text(
+            chat_id=call.message.chat.id, message_id=call.message.message_id,
+            text=f"✅ **Sizning tanlovingiz:** {emp['name']}\n📂 **Guruh:** {emp['group']}\n\n🏛 **Poytaxt:** {emp['capital']}\n⚔️ **Ixtisoslashuv:** {emp
