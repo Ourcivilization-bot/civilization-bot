@@ -2,8 +2,8 @@ import os
 import logging
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
-from telegram.ext import Application, CommandHandler
+from telegram import Bot, Update, InlineKeyboardButton, InlineKeyboardMarkup, WebAppInfo
+from telegram.ext import Dispatcher, CommandHandler
 
 # Loggingni sozlash
 logging.basicConfig(
@@ -18,15 +18,16 @@ CORS(app)
 
 TOKEN = os.getenv("BOT_TOKEN", "SIZNING_BOT_TOKENINGIZ")
 WEB_APP_URL = "https://helpful-marshmallow-91609c.netlify.app"
-RENDER_URL = "https://civilization-bot-4.onrender.com"  # Render'dagi web xizmat havolangiz (oxirida / bo'lmasin)
+RENDER_URL = "https://civilization-bot-4.onrender.com"
 
 # Vaqtinchalik o'yinchi bazasi
 PLAYERS_DB = {}
 
-# Telegram bot obyektini va application'ni sozlaymiz
-telegram_app = Application.builder().token(TOKEN).build()
+# Bot va Dispatcher yaratish (v13 sintaksisi)
+bot = Bot(token=TOKEN)
+dispatcher = Dispatcher(bot, None, use_context=True)
 
-async def start(update: Update, context):
+def start(update, context):
     user = update.effective_user
     if user.id not in PLAYERS_DB:
         PLAYERS_DB[user.id] = {
@@ -46,14 +47,14 @@ async def start(update: Update, context):
     ]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    await update.message.reply_text(
+    update.message.reply_text(
         f"Salom, <b>{user.first_name}</b>! Sivilizatsiya strategiya o'yiniga xush kelibsiz.\n\n"
         "Imperiyangizni boshqarish va xazinangizni ko'rish uchun quyidagi tugmani bosing:",
         reply_markup=reply_markup,
         parse_mode="HTML"
     )
 
-telegram_app.add_handler(CommandHandler("start", start))
+dispatcher.add_handler(CommandHandler("start", start))
 
 @app.route(f'/api/user/<int:user_id>', methods=['GET'])
 def get_user_data(user_id):
@@ -75,19 +76,17 @@ def home():
 
 @app.route(f'/{TOKEN}', methods=['POST'])
 def webhook():
-    """Telegramdan keladigan xabarlarni qabul qilib oluvchi webhook endpoint"""
-    update = Update.de_json(request.get_json(force=True), telegram_app.bot)
-    # Telegram xabarini async tarzda navbatga qo'shamiz
-    import asyncio
-    asyncio.run(telegram_app.process_update(update))
+    """Telegramdan keladigan xabarlarni qabul qilish"""
+    json_str = request.get_data().decode('UTF-8')
+    update = Update.de_json(json_str, bot)
+    dispatcher.process_update(update)
     return "OK", 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
     
-    # Render ishga tushganda avtomatik ravishda Telegramga webhook manzilini ulaymiz
-    import requests
+    # Webhookni Telegramga ulaymiz
     webhook_url = f"{RENDER_URL}/{TOKEN}"
-    requests.get(f"https://api.telegram.org/bot{TOKEN}/setWebhook?url={webhook_url}")
+    bot.set_webhook(url=webhook_url)
     
     app.run(host='0.0.0.0', port=port)
