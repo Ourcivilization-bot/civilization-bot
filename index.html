@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sivilizatsiya - Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        h1 { font-size: 24px; color: #38bdf8; margin-bottom: 10px; }
+        .card {
+            background: #334155;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+        }
+        .card p { margin: 5px 0; font-size: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👑 Sivilizatsiya</h1>
+        <p id="welcome">Ma'lumotlar yuklanmoqda...</p>
+        
+        <div class="card">
+            <p><b>Hukmdor:</b> <span id="monarch">-</span></p>
+            <p><b>Imperiya:</b> <span id="empire">-</span></p>
+            <p><b>💰 Xazina:</b> <span id="gold">-</span> oltin</p>
+            <p><b>🛡 Umumiy Kuch:</b> <span id="power">-</span></p>
+        </div>
+
+        <div class="card">
+            <p><b>⚔️ Zabt etilgan yerlar:</b></p>
+            <p id="conquered">-</p>
+        </div>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Telegram orqali kirgan foydalanuvchining ID raqami
+        const userId = tg.initDataUnsafe?.user?.id || 123456789; // Test uchun default ID
+
+        // Backend API'dan ma'lumotni tortib kelamiz
+        fetch(`https://civilization-bot.onrender.com/api/user/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                if(data.error) {
+                    document.getElementById("welcome").innerText = "O'yinchi topilmadi. Avval botda /start bosing!";
+                    return;
+                }
+                document.getElementById("welcome").innerText = `Xush kelibsiz, ${data.player_name}!`;
+                document.getElementById("monarch").innerText = data.monarch_name;
+                document.getElementById("empire").innerText = data.empire_name;
+                document.getElementById("gold").innerText = data.gold.toLocaleString();
+                document.getElementById("power").innerText = data.total_power;
+                document.getElementById("conquered").innerText = data.conquered.length > 0 ? data.conquered.join(", ") : "Hali yerlar zabt etilmagan";
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById("welcome").innerText = "Server bilan aloqada xatolik yuz berdi!";
+            });
+    </script>
+</body>
+</html>
