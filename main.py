@@ -86,6 +86,18 @@ def run_server():
     server = ThreadingHTTPServer(("0.0.0.0", port), HealthHandler)
     server.serve_forever()
 
+def get_main_menu_markup():
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
+        types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
+        types.InlineKeyboardButton("⚔️ Qorgon", callback_data="army_menu"),
+        types.InlineKeyboardButton("💰 Soliq", callback_data="collect_tax"),
+        types.InlineKeyboardButton("🤝 Diplomatiya", callback_data="diplomacy_menu"),
+        types.InlineKeyboardButton("🏆 Reyting", callback_data="leaderboard")
+    )
+    return markup
+
 @bot.message_handler(commands=["start"])
 def send_welcome(message):
     markup = types.InlineKeyboardMarkup(row_width=1)
@@ -141,16 +153,8 @@ def callback_query(call):
             "total_power": 0, "last_tax_time": 0
         }
 
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        markup.add(
-            types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
-            types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
-            types.InlineKeyboardButton("⚔️ Qorgon", callback_data="army_menu"),
-            types.InlineKeyboardButton("💰 Soliq", callback_data="collect_tax"),
-            types.InlineKeyboardButton("🏆 Reyting", callback_data="leaderboard")
-        )
         bot.answer_callback_query(call.id, f"Hukmdor {monarch['name']} tanlandi!")
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"👑 **{emp['name']}**\nHukmdor: {monarch['name']}\n💰 Xazina: {initial_gold:,} oltin", reply_markup=markup, parse_mode="Markdown")
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"👑 **{emp['name']}**\nHukmdor: {monarch['name']}\n💰 Xazina: {initial_gold:,} oltin", reply_markup=get_main_menu_markup(), parse_mode="Markdown")
 
     elif call.data == "profile":
         data = user_game_data.get(user_id)
@@ -188,6 +192,43 @@ def callback_query(call):
         bot.answer_callback_query(call.id)
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"⚔️ **Harbiy Qorgon:**\n💂‍♂️ Piyoda: {data['army']['piyoda']}\n🐎 Otliq: {data['army']['otliq']}\n💣 Qamal: {data['army']['qamal']}\n🛡 Kuch: {data['total_power']}\n💰 Xazina: {data['gold']:,}", reply_markup=markup, parse_mode="Markdown")
 
+    # --------------------------------------------------------------
+    # DIPLOMATIYA BO'LIMI
+    # --------------------------------------------------------------
+    elif call.data == "diplomacy_menu":
+        data = user_game_data.get(user_id)
+        if not data: return
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        markup.add(
+            types.InlineKeyboardButton("🤝 Sulh tuzish", callback_data="dip_sulh"),
+            types.InlineKeyboardButton("🔄 Barter", callback_data="dip_barter"),
+            types.InlineKeyboardButton("💂‍♂️ Askar so'rash", callback_data="dip_askar"),
+            types.InlineKeyboardButton("👑 Vassallik so'rash", callback_data="dip_vassal"),
+            types.InlineKeyboardButton("💰 Savdo-sotiq", callback_data="dip_savdo"),
+            types.InlineKeyboardButton("🔙 Menyu", callback_data="back_to_menu")
+        )
+        bot.answer_callback_query(call.id)
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="🤝 **Diplomatiya Markazi**\n\nQuyidagi diplomatik harakatlardan birini tanlang:", reply_markup=markup, parse_mode="Markdown")
+
+    elif call.data == "dip_sulh":
+        bot.answer_callback_query(call.id, "Sulh tuzildi! Dushmanlar vaqtincha sizga hujum qilmaydi.", show_alert=True)
+    elif call.data == "dip_barter":
+        bot.answer_callback_query(call.id, "Barter muvaffaqiyatli amalga oshirildi: Resurslar ayirboshlandi!", show_alert=True)
+    elif call.data == "dip_askar":
+        data = user_game_data.get(user_id)
+        if data:
+            data["army"]["piyoda"] += 5
+            data["total_power"] += 50
+        bot.answer_callback_query(call.id, "Ittifoqchilar yordam sifatida +5 ta piyoda yuborishdi (+50 kuch)!", show_alert=True)
+    elif call.data == "dip_vassal":
+        bot.answer_callback_query(call.id, "Vassallik shartnomasi imzolandi! Kichik hududlar endi sizga soliq to'laydi.", show_alert=True)
+    elif call.data == "dip_savdo":
+        data = user_game_data.get(user_id)
+        if data:
+            data["gold"] += 3_000_000
+        bot.answer_callback_query(call.id, "Savdo karvoni keldi! Xazinaga +3,000,000 oltin qo'shildi.", show_alert=True)
+
+    # --------------------------------------------------------------
     elif call.data == "collect_tax":
         data = user_game_data.get(user_id)
         if not data: return
@@ -202,15 +243,7 @@ def callback_query(call):
         data["gold"] += tax
         data["last_tax_time"] = curr
         bot.answer_callback_query(call.id, f"+{tax:,} oltin olindi!")
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        markup.add(
-            types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
-            types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
-            types.InlineKeyboardButton("⚔️ Qorgon", callback_data="army_menu"),
-            types.InlineKeyboardButton("💰 Soliq", callback_data="collect_tax"),
-            types.InlineKeyboardButton("🏆 Reyting", callback_data="leaderboard")
-        )
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"✅ **{emp['name']}**\n💰 Xazina: {data['gold']:,} oltin", reply_markup=markup, parse_mode="Markdown")
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"✅ **{emp['name']}**\n💰 Xazina: {data['gold']:,} oltin", reply_markup=get_main_menu_markup(), parse_mode="Markdown")
 
     elif call.data == "leaderboard":
         sorted_p = sorted(user_game_data.items(), key=lambda x: x[1].get("total_power", 0), reverse=True)
@@ -294,15 +327,7 @@ def callback_query(call):
         data = user_game_data.get(user_id)
         if not data: return
         emp = EMPIRES[data["empire"]]
-        markup = types.InlineKeyboardMarkup(row_width=2)
-        markup.add(
-            types.InlineKeyboardButton("📜 Profil", callback_data="profile"),
-            types.InlineKeyboardButton("🗺 Xarita", callback_data="map"),
-            types.InlineKeyboardButton("⚔️ Qorgon", callback_data="army_menu"),
-            types.InlineKeyboardButton("💰 Soliq", callback_data="collect_tax"),
-            types.InlineKeyboardButton("🏆 Reyting", callback_data="leaderboard")
-        )
-        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"✅ **{emp['name']}**\n💰 Xazina: {data['gold']:,} oltin\n🛡 Kuch: {data['total_power']}", reply_markup=markup, parse_mode="Markdown")
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=f"✅ **{emp['name']}**\n💰 Xazina: {data['gold']:,} oltin\n🛡 Kuch: {data['total_power']}", reply_markup=get_main_menu_markup(), parse_mode="Markdown")
 
 if __name__ == "__main__":
     threading.Thread(target=run_server, daemon=True).start()
